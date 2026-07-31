@@ -10,44 +10,45 @@ Usage:
 """ 
 
 
-import argparse 
-import os 
+import argparse
+import os
 
-from dotenv import load_dotenv 
-from langchain_groq import ChatGroq  
-from llama_index.core import SimpleDirectoryReader, VectorStoreIndex
+from dotenv import load_dotenv
+from llama_index.core import Settings, SimpleDirectoryReader, VectorStoreIndex
 from llama_index.core.memory import ChatMemoryBuffer
-from langchain_core.messages import HumanMessage, SystemMessage 
-from llama_index.llms.openai import OpenAI
+from llama_index.embeddings.huggingface import HuggingFaceEmbedding
+from llama_index.llms.groq import Groq
 
-load_dotenv()   
+load_dotenv()
 
-def build_index(pdf_path: str) -> VectorStoreIndex: 
-    print(f"📄 Loading and indexing {pdf_path}... ") 
-    reader = SimpleDirectoryReader(input_files=[pdf_path]) 
-    docs = reader.load_data() 
-    index = VectorStoreIndex.from_documents(docs) 
-    print("✅ Indexing complete.") 
-    return index 
+Settings.llm = Groq(model="llama-3.3-70b-versatile", api_key=os.getenv("GROQ_API_KEY"))
+Settings.embed_model = HuggingFaceEmbedding(model_name="BAAI/bge-small-en-v1.5")
+
+def build_index(pdf_path: str) -> VectorStoreIndex:
+    print(f"📄 Loading and indexing {pdf_path}... ")
+    reader = SimpleDirectoryReader(input_files=[pdf_path])
+    docs = reader.load_data()
+    index = VectorStoreIndex.from_documents(docs)
+    print("✅ Indexing complete.")
+    return index
 
 
-def interactive_qa(index: VectorStoreIndex, question: str = None) -> None: 
-    chat_memory = ChatMemoryBuffer() 
-    llm = OpenAI() 
-    chat_model = ChatGroq(llm=llm, memory=chat_memory) 
+def interactive_qa(index: VectorStoreIndex, question: str = None) -> None:
+    chat_memory = ChatMemoryBuffer.from_defaults()
+    chat_engine = index.as_chat_engine(chat_mode="context", memory=chat_memory)
 
-    if question: 
-        print(f"🤖 Question: {question}") 
-        response = index.query(question, chat_model=chat_model) 
-        print(f"💬 Answer: {response.response}") 
-    else: 
-        print("🤖 Enter your questions (type 'exit' to quit):") 
-        while True: 
-            user_input = input("You: ") 
-            if user_input.lower() == "exit": 
-                break 
-            response = index.query(user_input, chat_model=chat_model) 
-            print(f"💬 Answer: {response.response}") 
+    if question:
+        print(f"🤖 Question: {question}")
+        response = chat_engine.chat(question)
+        print(f"💬 Answer: {response.response}")
+    else:
+        print("🤖 Enter your questions (type 'exit' to quit):")
+        while True:
+            user_input = input("You: ")
+            if user_input.lower() == "exit":
+                break
+            response = chat_engine.chat(user_input)
+            print(f"💬 Answer: {response.response}")
             
             
 def single_question(index: VectorStoreIndex, question: str) -> None: 
