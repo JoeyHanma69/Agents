@@ -1,4 +1,4 @@
-title: code-review-agent
+title: pdf-qa-agent
 description: Reviews code for bugs, security issues, performance, and style violations
 author: JoeyHanma69
 language: python

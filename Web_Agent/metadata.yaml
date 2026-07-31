@@ -1,6 +1,6 @@
 title: web-research-agent
 description: Searches the web for a topic and synthesizes a structured research report
-author: ashishpatel26
+author: JoeyHanma69
 language: python
 framework: langgraph
 tags: [research, web-search, rag, langgraph]
